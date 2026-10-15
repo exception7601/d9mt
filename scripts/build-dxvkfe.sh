@@ -10,7 +10,8 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 V="$ROOT/vendor/dxvk"
-BUILD="$ROOT/build"
+BUILD="${BUILD_DIR:-$ROOT/build}"
+WINEMETAL_DIR="${WINEMETAL_DIR:-$ROOT/prebuilt}"
 GEN="$BUILD/dxvkfe-gen"
 
 # RELEASE=1 -> max-speed production build: -O3 + LTO, asserts stripped, and
@@ -191,7 +192,7 @@ C_SOURCES=(
 # Compile (cached, parallel)
 # ---------------------------------------------------------------------------
 objname() { # unique object name from path relative to repo root
-  local rel="${1#$ROOT/}"
+  local rel="${1#"$ROOT"/}"
   echo "$OBJ/$(echo "$rel" | tr '/.' '__').o"
 }
 
@@ -247,7 +248,7 @@ echo "[dxvkfe] linking d3d9fe.dll"
   -Wl,--gc-sections \
   -static -static-libgcc -static-libstdc++ \
   -Wl,--file-alignment=4096,--enable-stdcall-fixup,--kill-at \
-  -L "$ROOT/prebuilt" -lwinemetal \
+  -L "$WINEMETAL_DIR" -lwinemetal \
   -L "$BUILD/d9mtmetal" -ld9mtmetal32 \
   -luser32 -lgdi32 -lsetupapi -luuid \
   ${TRACY_LIBS[@]+"${TRACY_LIBS[@]}"} \

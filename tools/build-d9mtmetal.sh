@@ -6,11 +6,23 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SRC="$ROOT/src/d9mtmetal"
-OUT="$ROOT/build"
+OUT="${BUILD_DIR:-$ROOT/build}"
 CX="${CX:-/Applications/CrossOver.app/Contents/SharedSupport/CrossOver}"
 # CrossOver bottle to install the per-prefix copies + builtin override into.
 # Override for your own game:  BOTTLE="My Game" bash tools/build-d9mtmetal.sh
 BOTTLE="${BOTTLE:-Rockstar Games Launcher}"
+INSTALL=1
+case "${1:-}" in
+  --build-only) INSTALL=0; shift ;;
+  -h|--help)
+    printf 'Usage: bash tools/build-d9mtmetal.sh [--build-only]\n'
+    exit 0
+    ;;
+esac
+[[ $# == 0 ]] || { printf 'Unknown argument: %s\n' "$1" >&2; exit 1; }
+if [[ "$INSTALL" == 1 ]]; then
+  printf '%s\n' 'Legacy mode installs into CrossOver. Use --build-only to compile without installation.'
+fi
 mkdir -p "$OUT/d9mtmetal"
 
 echo "[d9mtmetal] unix .so (x86_64: wine's unix side runs under Rosetta)"
@@ -73,6 +85,11 @@ EXPORTS
 EOF
 i686-w64-mingw32-dlltool -d "$OUT/d9mtmetal/d9mtmetal.def" \
   -l "$OUT/d9mtmetal/libd9mtmetal32.a" --dllname d9mtmetal.dll
+
+if [[ "$INSTALL" == 0 ]]; then
+  printf '[d9mtmetal] build complete: %s\n' "$OUT/d9mtmetal"
+  exit 0
+fi
 
 echo "[d9mtmetal] installing into CrossOver dxmt dir (in WINEDLLPATH with"
 echo "            proper arch layout; this is how CX26's bundled DXMT ships)"
