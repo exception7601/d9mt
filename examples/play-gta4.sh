@@ -55,7 +55,7 @@ while [[ $# -gt 0 ]]; do
     --hud)        HUD=1 ;;
     --log)        FOLLOW=1 ;;
     --restore)    ACTION=restore ;;
-    --kill)       ACTION=kill ;;
+    --kill)       ACTION="kill" ;;
     -h|--help)    sed -n '2,30p' "$0"; exit 0 ;;
     *) die "unknown arg: $1" ;;
   esac
@@ -84,16 +84,16 @@ if [[ "$DEPLOY" == 1 ]]; then
     ok "saved original d3d9.dll -> $ORIG_BAK"
   fi
   cp "$REPO/build/d3d9fe.dll" "$GAME_DIR/d3d9.dll"
-  ok "deployed $(ls -la "$REPO/build/d3d9fe.dll" | awk '{print $5}') bytes -> d3d9.dll"
+  ok "deployed $(wc -c < "$REPO/build/d3d9fe.dll" | tr -d ' ') bytes -> d3d9.dll"
 fi
 
-declare -a ENVV=(WINEDLLOVERRIDES="d3d9=n")
+declare -a ENVV=()
 [[ "$HUD" == 1 ]] && ENVV+=(MTL_HUD_ENABLED=1)
 
 cd "$GAME_DIR"
 rm -f d3d9fe.log
 ok "launching GTAIV.exe (d9mt Metal driver)…"
-env "${ENVV[@]}" "$CX_WINE" --bottle "$BOTTLE_NAME" start /unix "$GAME_DIR/GTAIV.exe" \
+env ${ENVV[@]+"${ENVV[@]}"} "$CX_WINE" --bottle "$BOTTLE_NAME" --dll "d3d9=n" start /unix "$GAME_DIR/GTAIV.exe" \
   > /tmp/gta4-d9mt-launch.log 2>&1 || die "wine launch failed (see /tmp/gta4-d9mt-launch.log)"
 ok "launched (driver log: d3d9fe.log in game dir; first boot compiles shaders ~1-2 min)"
 
